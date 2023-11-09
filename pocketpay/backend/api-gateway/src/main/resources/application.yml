@@ -1,0 +1,41 @@
+server:
+  port: 9191
+
+spring:
+  application:
+    name: API_GATEWAY
+  cloud:
+    gateway:
+      globalcors:
+        corsConfigurations:
+          "[/**]":
+            allowedOrigins: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+      routes:
+        - id: USER-SERVICE
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/users/**
+        - id: BUSINESS-SERVICE
+          uri: lb://BUSINESS-SERVICE
+          predicates:
+            - Path=/business/**
+          filters:
+            - AuthenticationFilter
+        - id: TRANSACTION-SERVICE
+          uri: lb://TRANSACTION-SERVICE
+          predicates:
+            - Path=/transaction/**
+          filters:
+            - AuthenticationFilter
+
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: localhost

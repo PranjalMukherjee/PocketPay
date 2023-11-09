@@ -1,0 +1,180 @@
+pvc:
+  name: pvc-bc100
+  storage: 4Gi
+  accessModes:
+  - ReadWriteOnce
+deployments:
+  - deployment_name: mockserver-deployment
+    label_name: mockserver-pod
+    container_name: mockserver-container
+    replicaCount: 1
+    image:
+      repository: ghcr.io/satyanarayana-senapathi/bootcamp122-mockserver:latest
+    imagePullSecrets: my-ghcr-secret
+    port: 3001 
+
+  - deployment_name: frontend-deployment
+    label_name: frontend-pod
+    container_name: frontend-container
+    replicaCount: 1     
+    image:
+      repository: ghcr.io/satyanarayana-senapathi/bootcamp122-frontend:latest
+    imagePullSecrets: my-ghcr-secret
+    port: 80
+
+  - deployment_name: database-deployment
+    label_name: database-pod
+    container_name: database-container
+    replicaCount: 1     
+    image:
+      repository: mysql:latest
+    imagePullSecrets: my-ghcr-secret
+    envFrom: database-secret  
+    port: 3306
+    volumeMounts:
+    - mountPath: /var/lib/mysql
+      name: mysql-volume
+    volumes: 
+    - name: mysql-volume
+      persistentVolumeClaim:
+        claimName: pvc-bc100
+
+#   - deployment_name: service-registry-deployment
+#     label_name: service-registry-pod
+#     container_name: service-registry-container
+#     replicaCount: 1     
+#     image:
+#       repository:  ghcr.io/satyanarayana-senapathi/auth0-bootcamp-backend-service-registry:v24
+#     imagePullSecrets: my-ghcr-secret
+#     port: 8761
+#     env:
+#     - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+#       value: https://api1.spcluster.tk/eureka/
+      
+#     - name: EUREKA_INSTANCE_HOSTNAME
+#       value: service-registry-service
+
+#   - deployment_name: cloud-gateway-deployment
+#     label_name: cloud-gateway-pod
+#     container_name: cloud-gateway-container
+#     replicaCount: 1     
+#     image:
+#       repository:  ghcr.io/satyanarayana-senapathi/auth0-bootcamp-backend-cloud-gateway:v24
+#     imagePullSecrets: my-ghcr-secret
+#     port: 9191
+#     env:
+#     - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+#       value: https://api1.spcluster.tk/eureka/
+      
+#     - name: EUREKA_INSTANCE_HOSTNAME
+#       value: cloud-gateway-service
+    
+#   - deployment_name: address-service-deployment
+#     label_name: address-service-pod
+#     container_name: address-service-container
+#     replicaCount: 1     
+#     image:
+#       repository: ghcr.io/satyanarayana-senapathi/auth0-bootcamp-backend-address-service:v24
+#     imagePullSecrets: my-ghcr-secret
+#     port: 9001
+#     env:
+#     - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+#       value: https://api1.spcluster.tk/eureka/
+
+#     - name: SPRING_DATASOURCE_URL
+#       value: jdbc:mysql://54.197.220.35:30002/zemoso_diagnostics?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+
+#     - name: SPRING_DATASOURCE_PASSWORD
+#       value: bc@95
+      
+#     - name: EUREKA_INSTANCE_HOSTNAME
+#       value: address-service
+  
+
+
+services:
+
+  - service_name: mockserver-service
+    label_name: mockserver-pod
+    type: ClusterIP
+    port: 3001
+    targetPort: 3001
+  
+  - service_name: frontend-service
+    label_name: frontend-pod
+    type: ClusterIP
+    port: 80
+    targetPort: 80
+  
+  - service_name: database-service
+    label_name: database-pod
+    type: NodePort
+    port: 3306
+    targetPort: 3306
+    nodePort: 30002
+
+#   - service_name: service-registry-service
+#     label_name: service-registry-pod
+#     type: ClusterIP
+#     port: 8761
+#     targetPort: 8761
+
+#   - service_name: cloud-gateway-service
+#     label_name: cloud-gateway-pod
+#     type: ClusterIP
+#     port: 9191
+#     targetPort: 9191
+  
+
+ingress:
+  enabled: "true"
+  name: my-ingress
+  className: nginx
+  sslcertificate: arn:aws:acm:us-east-1:365299945243:certificate/8150c196-fd5a-4884-8047-1cdf8ccfc7a7
+  annotations: {nginx.ingress.kubernetes.io/use-regex: "true"}
+  rules:
+  - host: fe-bc122.bootcamp64.tk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80
+  - host: ms-bc122.bootcamp64.tk
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: mockserver-service
+            port:
+              number: 3001
+#   - host: api1.spcluster.tk
+#     http:
+#       paths:
+#       - path: /$
+#         pathType: Exact
+#         backend:
+#           service:
+#             name: service-registry-service
+#             port:
+#               number: 8761
+#       - path: /eureka
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: service-registry-service
+#             port:
+#               number: 8761
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: cloud-gateway-service
+#             port:
+#               number: 9191
+

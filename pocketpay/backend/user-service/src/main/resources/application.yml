@@ -1,0 +1,31 @@
+server:
+  port: 9005
+
+spring:
+  application:
+    name: USER-SERVICE
+  config:
+    import: optional:classpath:.env[.properties]
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_ROOT}
+    password: ${DB_PASSWORD}
+  flyway:
+    baselineOnMigrate: true
+
+
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    hostname: localhost
+  flyway:
+    enabled: true
+    locations: classpath:/db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: false
+    mixed: true
